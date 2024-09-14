@@ -1,0 +1,677 @@
+// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
+/*
+ * Copyright (c) 2017 Fuzhou Rockchip Electronics Co., Ltd
+ */
+
+/dts-v1/;
+#include "rk3328.dtsi"
+
+/ {
+	model = "Rockchip RK3328 IOT20";
+	compatible = "rockchip,rk3328-evb", "rockchip,rk3328";
+
+	aliases {
+		mmc0 = &sdmmc;
+		mmc1 = &sdio;
+		mmc2 = &emmc;
+	};
+
+	chosen {
+		stdout-path = "serial2:1500000n8";
+		bootargs = "earlycon=uart8250,mmio32,0xfe660000 console=ttyFIQ0";
+	};
+
+	dc_12v: dc-12v {
+		compatible = "regulator-fixed";
+		regulator-name = "dc_12v";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <12000000>;
+		regulator-max-microvolt = <12000000>;
+	};
+
+	sdio_pwrseq: sdio-pwrseq {
+		compatible = "mmc-pwrseq-simple";
+		clocks = <&rk805 1>;
+		clock-names = "ext_clock";
+		pinctrl-names = "default";
+		pinctrl-0 = <&wifi_enable_h>;
+
+		/*
+		 * On the module itself this is one of these (depending
+		 * on the actual card populated):
+		 * - SDIO_RESET_L_WL_REG_ON
+		 * - PDN (power down when low)
+		 */
+		reset-gpios = <&gpio1 RK_PC2 GPIO_ACTIVE_HIGH>;
+	};
+
+	vcc_sys: vcc-sys {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_sys";
+		regulator-always-on;
+		regulator-boot-on;
+		regulator-min-microvolt = <5000000>;
+		regulator-max-microvolt = <5000000>;
+		vin-supply = <&dc_12v>;
+	};
+
+	vcc_phy: vcc-phy-regulator {
+		compatible = "regulator-fixed";
+		regulator-name = "vcc_phy";
+		regulator-always-on;
+		regulator-boot-on;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_status: led-status {
+			label = "led-status";
+			gpios = <&gpio0 RK_PD6 GPIO_ACTIVE_HIGH>;
+			linux,default-trigger = "heartbeat";
+			pinctrl-names = "default";
+			pinctrl-0 = <&led_status_h>;
+		};
+	};
+
+	i2c-gpio-4 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio1 RK_PD2 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio2 RK_PA2 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio4>;
+		status = "okay";
+	};
+
+	i2c-gpio-5 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio1 RK_PD0 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio1 RK_PC6 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio5>;
+		status = "okay";
+	};
+
+	i2c-gpio-6 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio1 RK_PC7 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio1 RK_PB3 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio6>;
+		status = "okay";
+	};
+
+	i2c-gpio-7 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio1 RK_PB2 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio1 RK_PA2 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio7>;
+		status = "okay";
+	};
+
+	i2c-gpio-8 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio1 RK_PA3 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio1 RK_PA4 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio8>;
+		status = "okay";
+	};
+
+	i2c-gpio-9 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio1 RK_PA6 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio1 RK_PA0 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio9>;
+		status = "okay";
+	};
+
+	i2c-gpio-10 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio1 RK_PA1 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio1 RK_PA5 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio10>;
+		status = "okay";
+	};
+
+	i2c-gpio-11 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio2 RK_PC5 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio2 RK_PC6 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio11>;
+		status = "okay";
+	};
+
+	i2c-gpio-12 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio2 RK_PC7 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio2 RK_PC4 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio12>;
+		status = "okay";
+	};
+
+	i2c-gpio-13 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio2 RK_PC1 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio2 RK_PC0 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio13>;
+		status = "okay";
+	};
+
+	i2c-gpio-14 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio2 RK_PB7 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio2 RK_PC2 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio14>;
+		status = "okay";
+	};
+
+	i2c-gpio-15 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio3 RK_PA5 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio3 RK_PA4 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio15>;
+		status = "okay";
+	};
+
+	i2c-gpio-16 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio3 RK_PA7 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio3 RK_PA6 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio16>;
+		status = "okay";
+	};
+
+	i2c-gpio-17 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio3 RK_PA1 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio3 RK_PB0 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio17>;
+		status = "okay";
+	};
+
+	i2c-gpio-18 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio3 RK_PA0 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio3 RK_PA2 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio18>;
+		status = "okay";
+	};
+
+	i2c-gpio-19 {
+		compatible = "i2c-gpio";
+		gpios = <&gpio0 RK_PA0 GPIO_ACTIVE_HIGH>, /* sda */
+				<&gpio0 RK_PA2 GPIO_ACTIVE_HIGH>; /* scl */
+		i2c-gpio,sda-open-drain;
+		i2c-gpio,scl-open-drain;
+		i2c-gpio,delay-us = <2>;	/* ~100 kHz */
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_i2c_gpio19>;
+		status = "okay";
+	};
+
+};
+
+&cpu0 {
+	cpu-supply = <&vdd_arm>;
+};
+
+&cpu1 {
+	cpu-supply = <&vdd_arm>;
+};
+
+&cpu2 {
+	cpu-supply = <&vdd_arm>;
+};
+
+&cpu3 {
+	cpu-supply = <&vdd_arm>;
+};
+
+&emmc {
+	bus-width = <8>;
+	cap-mmc-highspeed;
+	non-removable;
+	pinctrl-names = "default";
+	pinctrl-0 = <&emmc_clk &emmc_cmd &emmc_bus8>;
+	status = "okay";
+};
+
+&gmac2phy {
+	phy-supply = <&vcc_phy>;
+	clock_in_out = "output";
+	assigned-clock-rate = <50000000>;
+	assigned-clocks = <&cru SCLK_MAC2PHY>;
+	assigned-clock-parents = <&cru SCLK_MAC2PHY_SRC>;
+	status = "okay";
+};
+
+&i2c1 {
+	status = "okay";
+
+	rk805: pmic@18 {
+		compatible = "rockchip,rk805";
+		reg = <0x18>;
+		interrupt-parent = <&gpio2>;
+		interrupts = <6 IRQ_TYPE_LEVEL_LOW>;
+		#clock-cells = <1>;
+		clock-output-names = "xin32k", "rk805-clkout2";
+		gpio-controller;
+		#gpio-cells = <2>;
+		pinctrl-names = "default";
+		pinctrl-0 = <&pmic_int_l>;
+		rockchip,system-power-controller;
+		wakeup-source;
+
+		vcc1-supply = <&vcc_sys>;
+		vcc2-supply = <&vcc_sys>;
+		vcc3-supply = <&vcc_sys>;
+		vcc4-supply = <&vcc_sys>;
+		vcc5-supply = <&vcc_io>;
+		vcc6-supply = <&vcc_io>;
+
+		regulators {
+			vdd_logic: DCDC_REG1 {
+				regulator-name = "vdd_logic";
+				regulator-min-microvolt = <712500>;
+				regulator-max-microvolt = <1450000>;
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <1000000>;
+				};
+			};
+
+			vdd_arm: DCDC_REG2 {
+				regulator-name = "vdd_arm";
+				regulator-min-microvolt = <712500>;
+				regulator-max-microvolt = <1450000>;
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <950000>;
+				};
+			};
+
+			vcc_ddr: DCDC_REG3 {
+				regulator-name = "vcc_ddr";
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+				};
+			};
+
+			vcc_io: DCDC_REG4 {
+				regulator-name = "vcc_io";
+				regulator-min-microvolt = <3300000>;
+				regulator-max-microvolt = <3300000>;
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <3300000>;
+				};
+			};
+
+			vcc_18: LDO_REG1 {
+				regulator-name = "vcc_18";
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <1800000>;
+				};
+			};
+
+			vcc18_emmc: LDO_REG2 {
+				regulator-name = "vcc18_emmc";
+				regulator-min-microvolt = <1800000>;
+				regulator-max-microvolt = <1800000>;
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <1800000>;
+				};
+			};
+
+			vdd_10: LDO_REG3 {
+				regulator-name = "vdd_10";
+				regulator-min-microvolt = <1000000>;
+				regulator-max-microvolt = <1000000>;
+				regulator-always-on;
+				regulator-boot-on;
+				regulator-state-mem {
+					regulator-on-in-suspend;
+					regulator-suspend-microvolt = <1000000>;
+				};
+			};
+		};
+	};
+};
+
+&pinctrl {
+	pmic {
+		pmic_int_l: pmic-int-l {
+			rockchip,pins = <2 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+	sdio-pwrseq {
+		wifi_enable_h: wifi-enable-h {
+		rockchip,pins =
+			<1 RK_PC2 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	gmac2phy {
+		fephyled_duplex: fephyled-duplex {
+			rockchip,pins = <0 RK_PD6 2 &pcfg_pull_none>;
+		};
+
+		fephyled_rxm1: fephyled-rxm1 {
+			rockchip,pins = <2 RK_PD1 2 &pcfg_pull_none>;
+		};
+
+	};
+
+	leds {
+		led_status_h: led-status-h {
+			rockchip,pins = <0 RK_PD6 RK_FUNC_GPIO &pcfg_pull_none>;
+		};
+	};
+
+	i2c_gpio4 {
+		pinctrl_i2c_gpio4: i2c_gpio4-0 {
+			rockchip,pins =
+				<1 RK_PD2 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio5 {
+		pinctrl_i2c_gpio5: i2c_gpio5-0 {
+			rockchip,pins =
+				<1 RK_PD0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio6 {
+		pinctrl_i2c_gpio6: i2c_gpio6-0 {
+			rockchip,pins =
+				<1 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PC3 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio7 {
+		pinctrl_i2c_gpio7: i2c_gpio7-0 {
+			rockchip,pins =
+				<1 RK_PB2 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio8 {
+		pinctrl_i2c_gpio8: i2c_gpio8-0 {
+			rockchip,pins =
+				<1 RK_PA3 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio9 {
+		pinctrl_i2c_gpio9: i2c_gpio9-0 {
+			rockchip,pins =
+				<1 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio10 {
+		pinctrl_i2c_gpio10: i2c_gpio10-0 {
+			rockchip,pins =
+				<1 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>,
+				<1 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio11 {
+		pinctrl_i2c_gpio11: i2c_gpio11-0 {
+			rockchip,pins =
+				<2 RK_PC5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PC6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio12 {
+		pinctrl_i2c_gpio12: i2c_gpio12-0 {
+			rockchip,pins =
+				<2 RK_PC7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PC4 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio13 {
+		pinctrl_i2c_gpio13: i2c_gpio13-0 {
+			rockchip,pins =
+				<2 RK_PC1 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PC0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio14 {
+		pinctrl_i2c_gpio14: i2c_gpio14-0 {
+			rockchip,pins =
+				<2 RK_PB7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<2 RK_PC2 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio15 {
+		pinctrl_i2c_gpio15: i2c_gpio15-0 {
+			rockchip,pins =
+				<3 RK_PA5 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA4 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio16 {
+		pinctrl_i2c_gpio16: i2c_gpio16-0 {
+			rockchip,pins =
+				<3 RK_PA7 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA6 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio17 {
+		pinctrl_i2c_gpio17: i2c_gpio17-0 {
+			rockchip,pins =
+				<3 RK_PA1 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PB0 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio18 {
+		pinctrl_i2c_gpio18: i2c_gpio18-0 {
+			rockchip,pins =
+				<3 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<3 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+
+	i2c_gpio19 {
+		pinctrl_i2c_gpio19: i2c_gpio19-0 {
+			rockchip,pins =
+				<0 RK_PA0 RK_FUNC_GPIO &pcfg_pull_up>,
+				<0 RK_PA2 RK_FUNC_GPIO &pcfg_pull_up>;
+		};
+	};
+
+};
+
+&sdio {
+	bus-width = <4>;
+	cap-sd-highspeed;
+	cap-sdio-irq;
+	keep-power-in-suspend;
+	max-frequency = <150000000>;
+	mmc-pwrseq = <&sdio_pwrseq>;
+	non-removable;
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdmmc1_bus4 &sdmmc1_cmd &sdmmc1_clk>;
+	status = "okay";
+
+	brcmf: bcrmf@1 {
+		reg = <1>;
+		compatible = "brcm,bcm4329-fmac";
+		interrupt-parent = <&gpio1>;
+		interrupts = <RK_PC3 IRQ_TYPE_LEVEL_HIGH>;
+		interrupt-names = "host-wake";
+	};
+
+};
+
+
+&tsadc {
+	status = "okay";
+};
+
+&uart2 {
+	status = "okay";
+};
+
+&u2phy {
+	status = "okay";
+};
+
+&u2phy_host {
+	status = "okay";
+};
+
+&u2phy_otg {
+	status = "okay";
+};
+
+&usb20_otg {
+	status = "okay";
+};
+
+&usb_host0_ehci {
+	status = "okay";
+};
+
+&usb_host0_ohci {
+	status = "okay";
+};
+
