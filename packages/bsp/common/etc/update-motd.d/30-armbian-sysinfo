@@ -19,7 +19,7 @@ MOTD_DISABLE=""
 PRIMARY_INTERFACE="eth0"
 PRIMARY_DIRECTION="rx"
 STORAGE=/dev/sda1
-HIDE_IP_PATTERN="^dummy0|^lo|^docker"
+
 CPU_TEMP_LIMIT=60
 # Temperature offset in Celcius degrees
 CPU_TEMP_OFFSET=0
@@ -53,28 +53,6 @@ function display() {
 	fi
 } # display
 
-function get_wan_address(){
-curl -s http://whatismyip.akamai.com/
-}
-
-function get_ip_addresses() {
-	local ips=()
-	for f in /sys/class/net/*; do
-		local intf=$(basename $f)
-		# match only interface names "dummy0" and "lo"
-		if [[ $intf =~ $HIDE_IP_PATTERN ]]; then
-			continue
-		else
-			local tmp=$(ip -4 addr show dev $intf | grep -v "$intf:avahi" | awk '/inet/ {print $2}' | cut -d'/' -f1 | uniq)
-			# add both name and IP - can be informative but becomes ugly with long persistent/predictable device names
-			#[[ -n $tmp ]] && ips+=("$intf: $tmp")
-			# add IP only
-			[[ -n $tmp ]] && ips+=("$tmp")
-		fi
-	done
-	echo "${ips[@]}"
-} # get_ip_addresses
-
 function storage_info() {
 	# storage info
 	RootInfo=$(df -h /)
@@ -94,8 +72,6 @@ function storage_info() {
 # query various systems and send some stuff to the background for overall faster execution.
 # Works only with ambienttemp and batteryinfo since A20 is slow enough :)
 amb_temp=$(ambienttemp &)
-ip_address=$(get_ip_addresses &)
-wan_ip_address=$(get_wan_address &)
 batteryinfo
 storage_info
 getboardtemp
@@ -132,11 +108,6 @@ swap_total=$(awk '{print $(2)}' <<<${swap_info})
 # draw a line to start this section
 
 #echo ""
-echo -en " IP addresses: \x1B[93m(LAN)\x1B[0m \x1B[92m$ip_address\x1B[0m "
-if [[ -n $wan_ip_address ]]; then
-echo -e "\x1B[93m(WAN)\x1B[0m $wan_ip_address"
-fi
-echo ""
 printf "\e[0;90m Performance:  \x1B[0m"
 echo "" # fixed newline
 echo ""
@@ -162,7 +133,10 @@ display "Zram usage" "$swap_usage" "75" "0" "%" " of ${swap_total}"
 echo "" # fixed newline
 display " CPU temp" "$board_temp" $CPU_TEMP_LIMIT "0" "°C" ""
 display "Ambient temp" "$amb_temp" $AMB_TEMP_LIMIT "0" "°C" ""
-display "Usage of /" "$root_usage" "90" "1" "%" " of $root_total"
+display "Usage of /" "$root_usage" "90" "1" "%" " of $root_total $overlay_root"
+if command -v overlayroot-chroot > /dev/null 2>&1 && findmnt -k /media/root-ro | tail -1 | grep -w /media/root-ro > /dev/null 2>&1; then
+echo -ne "\x1B[91m(read only rootfs)\x1B[0m"
+fi
 echo "" # fixed newline
 a=0
 display "storage/" "$storage_usage" "90" "1" "%" " of $storage_total" ; a=$((a+$?))
@@ -172,24 +146,24 @@ display "Battery" "$battery_percent" "20" "1" "%" "$status_battery_text" ; a=$((
 
 line=0
 if [[ -n "$PRIMARY_INTERFACE" ]] && vnstat -i "$PRIMARY_INTERFACE" &> /dev/null; then
-	traffic=$(vnstat -i $PRIMARY_INTERFACE --oneline | cut -d";" -f4,5)
-	traffic_rx=$(echo $traffic | cut -d";" -f1,1 | sed -r 's/([0-9]+\.[0-9]{1})[0-9]*/\1/' | cut -d" " -f1 | cut -d"," -f1)
+	traffic=$(LC_ALL=C vnstat -i $PRIMARY_INTERFACE --oneline | cut -d";" -f4,5)
+	traffic_rx=$(echo $traffic | cut -d";" -f1,1 | sed -r 's/([0-9]+\.[0-9]{1})[0-9]*/\1/' | cut -d" " -f1 | cut -d"." -f1)
 	traffic_rx_unit=$(echo $traffic | cut -d";" -f1,1 | sed -r 's/([0-9]+\.[0-9]{1})[0-9]*/\1/' | cut -d" " -f2)
-	traffic_tx=$(echo $traffic | cut -d";" -f2,2 | sed -r 's/([0-9]+\.[0-9]{1})[0-9]*/\1/' | cut -d" " -f1 | cut -d"," -f1)
+	traffic_tx=$(echo $traffic | cut -d";" -f2,2 | sed -r 's/([0-9]+\.[0-9]{1})[0-9]*/\1/' | cut -d" " -f1 | cut -d"." -f1)
 	traffic_tx_unit=$(echo $traffic | cut -d";" -f2,2 | sed -r 's/([0-9]+\.[0-9]{1})[0-9]*/\1/' | cut -d" " -f2)
 	[[ "$traffic" == *"Not enough"* ]] && { traffic_tx="n/a	"; traffic_rx="n/a	"; }
 	case $PRIMARY_DIRECTION in
 		tx)
-			display " TX today" "$traffic_tx" 500 0 " $traffic_tx_unit" ""
+			display " TX today" "$traffic_tx" 500 0 "" "$traffic_tx_unit" ""
 			line=$((line+1))
 		;;
 		rx)
-			display " RX today" "$traffic_rx" 500 0 " $traffic_rx_unit" ""
+			display " RX today" "$traffic_rx" 500 0 "" "$traffic_rx_unit" ""
 			line=$((line+1))
 		;;
 		both)
-			display " TX today" "$traffic_tx" 500 0 " $traffic_tx_unit" ""
-			display "RX today" "$traffic_rx" 500 0 " $traffic_rx_unit" ""
+			display " TX today" "$traffic_tx" 500 0 "" "$traffic_tx_unit" ""
+			display "RX today" "$traffic_rx" 500 0 "" "$traffic_rx_unit" ""
 			line=$((line+1))
 		;;
 		*) #off or whatever
