@@ -5,6 +5,11 @@ function add_host_dependencies__abl_host_deps() {
 function post_build_image__900_convert_to_abl_img() {
 	[[ -z $version ]] && exit_with_error "version is not set"
 
+	if [ ! -z "$UEFI_GRUB_TARGET" ]; then
+		display_alert "Ignore" "${EXTENSION}" "info"
+		return 0
+	fi
+
 	if [ ! -z "$BOOTFS_TYPE" ]; then
 		return 0
 	fi
@@ -16,7 +21,7 @@ function post_build_image__900_convert_to_abl_img() {
 	old_rootfs_image_mount_dir=${DESTIMG}/rootfs-old
 	new_rootfs_image_mount_dir=${DESTIMG}/rootfs-new
 	mkdir -p ${old_rootfs_image_mount_dir} ${new_rootfs_image_mount_dir}
-	truncate --size=9216M ${ROOTFS_IMAGE_FILE}
+	truncate --size=9728M ${ROOTFS_IMAGE_FILE}
 	mkfs.ext4 -F ${ROOTFS_IMAGE_FILE}
 	new_rootfs_image_uuid=$(blkid -s UUID -o value ${ROOTFS_IMAGE_FILE})
 	old_image_loop_device=$(losetup -f -P --show ${DESTIMG}/${version}.img)
