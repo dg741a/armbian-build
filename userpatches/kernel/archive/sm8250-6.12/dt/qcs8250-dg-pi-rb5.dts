@@ -28,11 +28,11 @@
 	};
 
 	chosen {
-		stdout-path = "serial0:1500000n8";
+		stdout-path = "serial0:115200n8";
 	};
 
 	/* Fixed crystal oscillator dedicated to MCP2518FD */
-	clk40m: can-clock {
+	clk40M: can-clock {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
 		clock-frequency = <40000000>;
@@ -171,8 +171,6 @@
 
 	thermal-zones {
 		conn-thermal {
-			polling-delay-passive = <0>;
-			polling-delay = <0>;
 			thermal-sensors = <&pm8150b_adc_tm 0>;
 
 			trips {
@@ -185,8 +183,6 @@
 		};
 
 		pm8150l-pcb-thermal {
-			polling-delay-passive = <0>;
-			polling-delay = <0>;
 			thermal-sensors = <&pm8150l_adc_tm 1>;
 
 			trips {
@@ -199,8 +195,6 @@
 		};
 
 		skin-msm-thermal {
-			polling-delay-passive = <0>;
-			polling-delay = <0>;
 			thermal-sensors = <&pm8150l_adc_tm 0>;
 
 			trips {
@@ -213,8 +207,6 @@
 		};
 
 		wifi-thermal {
-			polling-delay-passive = <0>;
-			polling-delay = <0>;
 			thermal-sensors = <&pm8150_adc_tm 1>;
 
 			trips {
@@ -227,8 +219,6 @@
 		};
 
 		xo-thermal {
-			polling-delay-passive = <0>;
-			polling-delay = <0>;
 			thermal-sensors = <&pm8150_adc_tm 0>;
 
 			trips {
@@ -409,6 +399,10 @@
 		pinctrl-names = "default";
 		pinctrl-0 = <&vbat_5g_en_state>;
 	};
+};
+&adsp {
+	status = "okay";
+	firmware-name = "qcom/sm8250/adsp.mbn";
 };
 
 &apps_rsc {
@@ -707,11 +701,6 @@
 &slpi {
 	status = "okay";
 	firmware-name = "qcom/sm8250/Thundercomm/RB5/slpi.mbn";
-};
-
-&adsp {
-	status = "okay";
-	firmware-name = "qcom/sm8250/adsp.mbn";
 };
 
 &cdsp {
@@ -1100,17 +1089,6 @@
 	status = "okay";
 };
 
-&sdhc_2 {
-	status = "okay";
-	pinctrl-names = "default";
-	pinctrl-0 = <&sdc2_default_state &sdc2_card_det_n>;
-	vmmc-supply = <&vreg_l9c_2p96>;
-	vqmmc-supply = <&vreg_l6c_2p96>;
-	cd-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
-	bus-width = <4>;
-	no-sdio;
-	no-mmc;
-};
 
 /* TERT I2S Uses 1 I2S SD Lines for audio on LT9611 HDMI Bridge */
 &q6afedai {
@@ -1132,6 +1110,18 @@
 	dai@2 {
 		reg = <2>;
 	};
+};
+
+&sdhc_2 {
+	status = "okay";
+	pinctrl-names = "default";
+	pinctrl-0 = <&sdc2_default_state &sdc2_card_det_n>;
+	vmmc-supply = <&vreg_l9c_2p96>;
+	vqmmc-supply = <&vreg_l6c_2p96>;
+	cd-gpios = <&tlmm 77 GPIO_ACTIVE_LOW>;
+	bus-width = <4>;
+	no-sdio;
+	no-mmc;
 };
 
 &sound {
@@ -1374,24 +1364,6 @@
 		bias-pull-up;
 	};
 
-	wlan_en_state: wlan-default-state {
-		pins = "gpio20";
-		function = "gpio";
-		drive-strength = <16>;
-		output-low;
-		bias-pull-up;
-	};
-
-	vbat_5g_en_state: 5g-default-state {
-		vbat-5g-en {
-			pins = "gpio8";
-			function = "gpio";
-			drive-strength = <16>;
-			output-high;
-			bias-disable;
-		};
-	};
-
 	lt9611_irq_pin: lt9611-irq-state {
 		pins = "gpio63";
 		function = "gpio";
@@ -1422,6 +1394,23 @@
 		pins = "gpio77";
 		function = "gpio";
 		bias-pull-up;
+	};
+
+	wlan_en_state: wlan-default-state {
+		pins = "gpio20";
+		function = "gpio";
+		drive-strength = <16>;
+		output-low;
+		bias-pull-up;
+	};
+	vbat_5g_en_state: 5g-default-state {
+		vbat-5g-en {
+			pins = "gpio8";
+			function = "gpio";
+			drive-strength = <16>;
+			output-high;
+			bias-disable;
+		};
 	};
 };
 
