@@ -16,8 +16,8 @@ index 111111111111..222222222222 100644
  		if (btbcm_set_bdaddr_from_efi(hdev) != 0) {
  			bt_dev_info(hdev, "BCM: Using default device address (%pMR)",
  				    &bda->bdaddr);
--			set_bit(HCI_QUIRK_INVALID_BDADDR, &hdev->quirks);
-+			//set_bit(HCI_QUIRK_INVALID_BDADDR, &hdev->quirks);
+-			hci_set_quirk(hdev, HCI_QUIRK_INVALID_BDADDR);
++			//hci_set_quirk(hdev, HCI_QUIRK_INVALID_BDADDR);
  		}
  	}
  

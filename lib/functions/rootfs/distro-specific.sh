@@ -80,8 +80,6 @@ function create_sources_list_and_deploy_repo_key() {
 
 	declare distro=""
 
-	APT_SIGNING_KEY_FILE="/usr/share/keyrings/armbian-archive-keyring.gpg"
-
 	# Drop deboostrap sources leftovers
 	rm -f "${basedir}/etc/apt/sources.list"
 
@@ -91,17 +89,13 @@ function create_sources_list_and_deploy_repo_key() {
 			distro="debian"
 
 			declare -a suites=("${release}" "${release}-updates")
-			declare -a security_suites=("${release}-security")
 			declare -a components=(main contrib non-free)
 
-			if [[ "$release" == "buster" ]]; then
-				security_suites=("${release}/updates")
-			else
-			  suites+=("${release}-backports")
-			fi
-
 			if [[ "$release" != "buster" && "$release" != "bullseye" ]]; then
-			  components+=("non-free-firmware")
+				# EOS releases doesn't get security updates
+				declare -a security_suites=("${release}-security")
+				suites+=("${release}-backports")
+				components+=("non-free-firmware")
 			fi
 
 			cat <<- EOF > "${basedir}/etc/apt/sources.list.d/${distro}.sources"
@@ -110,25 +104,36 @@ function create_sources_list_and_deploy_repo_key() {
 			Suites: ${suites[@]}
 			Components: ${components[@]}
 			Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
-
-			Types: deb
-			URIs: http://${DEBIAN_SECURTY}
-			Suites: ${security_suites[@]}
-			Components: ${components[@]}
-			Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
 			EOF
+
+			if [ ${#security_suites[@]} -gt 0 ]; then
+				echo "" >> "${basedir}/etc/apt/sources.list.d/${distro}.sources" # it breaks if there is no line space in between
+				cat <<- EOF >> "${basedir}/etc/apt/sources.list.d/${distro}.sources"
+				Types: deb
+				URIs: http://${DEBIAN_SECURITY}
+				Suites: ${security_suites[@]}
+				Components: ${components[@]}
+				Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+				EOF
+			fi
 			;;
 
 		sid | unstable)
 			distro="debian"
 
+			if [[ "${ARCH}" == loong64 ]]; then
+				# loong64 is using debian-ports repo, we can change it to default after debian supports it officially
+				keyring_filename=/usr/share/keyrings/debian-ports-archive-keyring.gpg
+			else
+				keyring_filename=/usr/share/keyrings/debian-archive-keyring.gpg
+			fi
 			# sid is permanent unstable development and has no such thing as updates or security
 			cat <<- EOF > "${basedir}/etc/apt/sources.list.d/${distro}.sources"
 			Types: deb
 			URIs: http://${DEBIAN_MIRROR}
 			Suites: ${release}
 			Components: main contrib non-free non-free-firmware
-			Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg
+			Signed-By: ${keyring_filename}
 			EOF
 
 			# Required for some packages on riscv64.
@@ -159,24 +164,28 @@ function create_sources_list_and_deploy_repo_key() {
 			;;
 	esac
 
-	# code to be made obsolete by making APA part of Armbian Core. #XXX
-	if [[ "${APA_IS_ACTIVE}" != "true" ]]; then
-		# add armbian key
-		display_alert "Adding Armbian repository and authentication key" "${when} :: /etc/apt/sources.list.d/armbian.sources" "info"
-		mkdir -p "${basedir}"/usr/share/keyrings
-		# change to binary form
-		gpg --dearmor < "${SRC}"/config/armbian.key > "${basedir}${APT_SIGNING_KEY_FILE}"
+	# add armbian key
+	display_alert "Adding Armbian repository and authentication key" "${when} :: /etc/apt/sources.list.d/armbian.sources" "info"
+	mkdir -p "${basedir}"/usr/share/keyrings
+	# change to binary form
+	APT_SIGNING_KEY_FILE="/usr/share/keyrings/armbian-archive-keyring.gpg"
+	gpg --batch --yes --dearmor < "${SRC}"/config/armbian.key > "${basedir}${APT_SIGNING_KEY_FILE}"
 
-		# lets link to the old file as armbian-config uses it and we can't set there to new file
-		# we user force linking as some old caches still exists
-		chroot "${basedir}" /bin/bash -c "ln -fs armbian-archive-keyring.gpg /usr/share/keyrings/armbian.gpg"
+	# deploy the qemu binary, no matter where the rootfs came from (built or cached)
+	deploy_qemu_binary_to_chroot "${basedir}" "${when}" # undeployed at end of this function
 
-		# lets keep old way for old distributions
-		if [[ "${RELEASE}" =~ (focal|bullseye) ]]; then
-			cp "${SRC}"/config/armbian.key "${basedir}"
-			chroot "${basedir}" /bin/bash -c "cat armbian.key | apt-key add - > /dev/null 2>&1"
-		fi
+	# lets link to the old file as armbian-config uses it and we can't set there to new file
+	# we user force linking as some old caches still exists
+	chroot "${basedir}" /bin/bash -c "ln -fs armbian-archive-keyring.gpg /usr/share/keyrings/armbian.gpg"
+
+	# lets keep old way for old distributions
+	if [[ "${RELEASE}" =~ (focal|bullseye) ]]; then
+		cp "${SRC}"/config/armbian.key "${basedir}"
+		chroot "${basedir}" /bin/bash -c "cat armbian.key | apt-key add - > /dev/null 2>&1"
 	fi
+
+	# undeploy the qemu binary from the image; we don't want to ship the host's qemu in the target image
+	undeploy_qemu_binary_from_chroot "${basedir}" "${when}"
 
 	# Add Armbian APT repository
 	declare -a components=()
