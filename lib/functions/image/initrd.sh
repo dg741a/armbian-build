@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (c) 2013-2023 Igor Pecovnik, igor@armbian.com
+# Copyright (c) 2013-2026 Igor Pecovnik, igor@armbian.com
 #
 # This file is a part of the Armbian Build Framework
 # https://github.com/armbian/build/
@@ -62,6 +62,7 @@ update_initramfs() {
 			[[ -d "${chroot_target}/etc/dropbear-initramfs/" ]] && initrd_files_to_hash+=("${chroot_target}/etc/dropbear-initramfs/")
 			[[ -d "${chroot_target}/etc/dropbear/initramfs/" ]] && initrd_files_to_hash+=("${chroot_target}/etc/dropbear/initramfs/")
 		fi
+		initrd_files_to_hash+=("${chroot_target}/etc/crypttab") # for updates to rootdev UUID
 	fi
 
 	# Find all the affected files; parallel md5sum sum them; invert hash and path, and remove chroot prefix.

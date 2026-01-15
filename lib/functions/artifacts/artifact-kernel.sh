@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (c) 2013-2023 Igor Pecovnik, igor@armbian.com
+# Copyright (c) 2013-2026 Igor Pecovnik, igor@armbian.com
 #
 # This file is a part of the Armbian Build Framework
 # https://github.com/armbian/build/
@@ -10,6 +10,8 @@
 function artifact_kernel_config_dump() {
 	# BOARD is NOT included. See explanation below.
 	artifact_input_variables[LINUXFAMILY]="${LINUXFAMILY}"
+	artifact_input_variables[LINUXCONFIG]="${LINUXCONFIG}"
+	artifact_input_variables[ARMBIAN_KERNEL_DEB_NAME]="${LINUXFAMILY}-${BRANCH}"
 	artifact_input_variables[BRANCH]="${BRANCH}"
 	artifact_input_variables[KERNEL_MAJOR_MINOR]="${KERNEL_MAJOR_MINOR}"
 	artifact_input_variables[KERNELSOURCE]="${KERNELSOURCE}"

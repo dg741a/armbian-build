@@ -1,5 +1,6 @@
 # Rockchip RK3588S octa core 32GB RAM SoC eMMC NvME 1x USB3 4x USB2 1x GbE
 BOARD_NAME="Youyeetoo R1 v3"
+BOARD_VENDOR="youyeetoo"
 BOARDFAMILY="rockchip-rk3588"
 BOARD_MAINTAINER="SuperKali"
 BOOTCONFIG="youyeetoo-r1-rk3588s_defconfig" # vendor name, not standard, see hook below, set BOOT_SOC below to compensate
@@ -32,15 +33,15 @@ function post_family_tweaks__youyeetoo_r1_naming_udev_network_interfaces() {
 	EOF
 }
 
-# Mainline U-Boot
 function post_family_config__youyeetoo_r1_use_mainline_uboot() {
 	display_alert "$BOARD" "Using mainline (next branch) U-Boot for $BOARD / $BRANCH" "info"
 
 	declare -g BOOTCONFIG="youyeetoo-r1-rk3588s_defconfig"
-	declare -g BOOTDELAY=1                                       # Wait for UART interrupt to enter UMS/RockUSB mode etc
-	declare -g BOOTSOURCE="https://github.com/u-boot/u-boot.git" # We ❤️ Mainline U-Boot
+	declare -g BOOTDELAY=1
+	declare -g BOOTSOURCE="https://github.com/u-boot/u-boot.git"
 	declare -g BOOTBRANCH="tag:v2025.10"
 	declare -g BOOTPATCHDIR="v2025.10"
+	unset BOOT_FDT_FILE
 
 	# Don't set BOOTDIR, allow shared U-Boot source directory for disk space efficiency
 	declare -g UBOOT_TARGET_MAP="BL31=${RKBIN_DIR}/${BL31_BLOB} ROCKCHIP_TPL=${RKBIN_DIR}/${DDR_BLOB};;u-boot-rockchip.bin"
@@ -54,19 +55,13 @@ function post_family_config__youyeetoo_r1_use_mainline_uboot() {
 	}
 }
 
-# U-boot 2025.04+ can detect and set fdtfile automatically on Youyeetoo R1.
-# So if using mainline u-boot, unset BOOT_FDT_FILE to let u-boot handle it.
-function post_family_config__youyeetoo-r1-v3_auto_dtb_name_via_uboot_detection() {
-	unset BOOT_FDT_FILE
-}
-
-# "rockchip-common: boot SD card first, then NVMe, then mmc"
+# "rockchip-common: boot SD card first, then NVMe, then eMMC"
 # include/configs/rockchip-common.h
-# -#define BOOT_TARGETS "mmc1 mmc0 nvme scsi usb pxe dhcp"
-# +#define BOOT_TARGETS "mmc0 nvme mmc1 scsi usb pxe dhcp"
-# On Youyeetoo R1, mmc0 is the SD card, mmc1 is the eMMC slot
+# -#define BOOT_TARGETS "mmc1 mmc0 nvme scsi usb pxe dhcp" (default)
+# +#define BOOT_TARGETS "mmc1 nvme mmc0 scsi usb pxe dhcp"
+# On Youyeetoo R1, mmc0 is the eMMC (sdhci), mmc1 is the SD card (sdmmc)
 function pre_config_uboot_target__youyeetoo_r1_patch_rockchip_common_boot_order() {
-	declare -a rockchip_uboot_targets=("mmc0" "nvme" "mmc1" "scsi" "usb" "pxe" "dhcp") # for future make-this-generic delight
+	declare -a rockchip_uboot_targets=("mmc1" "nvme" "mmc0" "scsi" "usb" "pxe" "dhcp") # mmc1=SD, mmc0=eMMC
 	display_alert "u-boot for ${BOARD}/${BRANCH}" "u-boot: adjust boot order to '${rockchip_uboot_targets[*]}'" "info"
 	sed -i -e "s/#define BOOT_TARGETS.*/#define BOOT_TARGETS \"${rockchip_uboot_targets[*]}\"/" include/configs/rockchip-common.h
 	regular_git diff -u include/configs/rockchip-common.h || true
@@ -78,7 +73,7 @@ function post_family_tweaks__youyeetoo_r1 {
 	[[ "${BRANCH}" == "vendor" ]] && return 0
 
 	display_alert "$BOARD" "Adjusting rtw89_8852be module" "info"
-	
+
 	cat <<- EOF > "${SDCARD}/etc/modprobe.d/rtw8852be.conf"
 		options rtw89_pci disable_aspm_l1=y disable_aspm_l1ss=y
 		options rtw89pci disable_aspm_l1=y disable_aspm_l1ss=y

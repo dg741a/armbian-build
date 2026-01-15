@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (c) 2013-2023 Igor Pecovnik, igor@armbian.com
+# Copyright (c) 2013-2026 Igor Pecovnik, igor@armbian.com
 #
 # This file is a part of the Armbian Build Framework
 # https://github.com/armbian/build/
@@ -15,6 +15,7 @@ function artifact_rootfs_config_dump() {
 	artifact_input_variables[DESKTOP_ENVIRONMENT]="${DESKTOP_ENVIRONMENT:-"no_DESKTOP_ENVIRONMENT_set"}"
 	artifact_input_variables[DESKTOP_ENVIRONMENT_CONFIG_NAME]="${DESKTOP_ENVIRONMENT_CONFIG_NAME:-"no_DESKTOP_ENVIRONMENT_CONFIG_NAME_set"}"
 	artifact_input_variables[DESKTOP_APPGROUPS_SELECTED]="${DESKTOP_APPGROUPS_SELECTED:-"no_DESKTOP_APPGROUPS_SELECTED_set"}"
+	artifact_input_variables[LEGACY_DEBOOTSTRAP]="${LEGACY_DEBOOTSTRAP:-"no"}"
 	# Hash of the packages added/removed by extensions
 	declare pkgs_hash="undetermined"
 	pkgs_hash="$(echo "${REMOVE_PACKAGES[*]} ${EXTRA_PACKAGES_ROOTFS[*]} ${PACKAGE_LIST_BOARD_REMOVE} ${PACKAGE_LIST_FAMILY_REMOVE}" | sha256sum | cut -d' ' -f1)"

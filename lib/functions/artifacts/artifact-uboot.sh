@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (c) 2013-2023 Igor Pecovnik, igor@armbian.com
+# Copyright (c) 2013-2026 Igor Pecovnik, igor@armbian.com
 #
 # This file is a part of the Armbian Build Framework
 # https://github.com/armbian/build/
@@ -80,9 +80,10 @@ function artifact_uboot_prepare_version() {
 	declare hash_hooks="undetermined"
 	hash_hooks="$(echo "${extension_hooks_hashed[@]}" | sha256sum | cut -d' ' -f1)"
 
-	# Hash the old-timey hooks
+	# Hash the old-timey hooks and regular core functions (atf code, used by u-boot build process)
 	declare hash_functions="undetermined"
-	calculate_hash_for_function_bodies "uboot_custom_postprocess" "write_uboot_platform" "write_uboot_platform_mtd" "setup_write_uboot_platform"
+	calculate_hash_for_function_bodies "uboot_custom_postprocess" "write_uboot_platform" "write_uboot_platform_mtd" \
+		"setup_write_uboot_platform" "compile_atf"
 	declare hash_uboot_functions="${hash_functions}"
 
 	# Hash those two together

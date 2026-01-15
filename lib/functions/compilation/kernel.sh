@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: GPL-2.0
 #
-# Copyright (c) 2013-2023 Igor Pecovnik, igor@armbian.com
+# Copyright (c) 2013-2026 Igor Pecovnik, igor@armbian.com
 #
 # This file is a part of the Armbian Build Framework
 # https://github.com/armbian/build/
@@ -73,8 +73,7 @@ function compile_kernel() {
 	declare version
 	version=$(grab_version "$kernel_work_dir")
 
-	# determine the toolchain
-	declare toolchain
+	# log the kernel toolchain version
 	LOG_SECTION="kernel_determine_toolchain" do_with_logging do_with_hooks kernel_determine_toolchain
 
 	kernel_config # has it's own logging sections inside
