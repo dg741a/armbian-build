@@ -160,6 +160,7 @@ case "$BOOT_SOC" in
 esac
 
 prepare_boot_configuration() {
+	display_alert "Preparing boot configuration" "rockchip64_common::prepare_boot_configuration()" "info"
 	ATFSOURCE=''
 	ATF_COMPILE='no'
 	case "$BOOT_SCENARIO" in
@@ -167,7 +168,6 @@ prepare_boot_configuration() {
 			UBOOT_TARGET_MAP="BL31=bl31.elf idbloader.img u-boot.itb;;idbloader.img u-boot.itb"
 			ATF_COMPILE=yes
 			ATFSOURCE='https://github.com/ARM-software/arm-trusted-firmware'
-			ATF_COMPILER='aarch64-linux-gnu-'
 			ATFDIR='arm-trusted-firmware'
 			ATFBRANCH='tag:v2.13.0' # also adapt ATFPATCHDIR when changing this
 			ATFPATCHDIR='atf-rockchip64/v2.13' # there's also v2.14 patches ready
