@@ -31,9 +31,9 @@ cd build
 - **Architecture:** x86_64, aarch64, or riscv64
 
 ### Operating System
-- **Native builds:** Armbian or Ubuntu 24.04 (Noble)
+- **Native builds:** Armbian/Debian 13 (Trixie)
 - **Containerized:** Any Docker-capable Linux
-- **Windows:** WSL2 with Armbian/Ubuntu 24.04
+- **Windows:** WSL2 with Armbian/Debian 13 (Trixie)
 
 ### Software
 - Superuser privileges (`sudo` or root)
@@ -57,7 +57,7 @@ Get help from users and contributors on troubleshooting, configuration, and deve
 👉 [forum.armbian.com](https://forum.armbian.com)
 
 ### Real-time Chat
-Join discussions with developers and community members on Discord, IRC, or Matrix.
+Join discussions with developers and community members on IRC or Discord.
 👉 [Community Chat](https://docs.armbian.com/Community_IRC/)
 
 ### Paid Consultation

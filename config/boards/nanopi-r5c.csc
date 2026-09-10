@@ -3,6 +3,7 @@ BOARD_NAME="NanoPi R5C"
 BOARD_VENDOR="friendlyelec"
 BOARDFAMILY="rockchip64"
 BOARD_MAINTAINER=""
+INTRODUCED="2022"
 BOOT_SOC="rk3568"
 KERNEL_TARGET="current,edge"
 KERNEL_TEST_TARGET="current"
@@ -13,8 +14,11 @@ IMAGE_PARTITION_TABLE="gpt"
 FULL_DESKTOP="no"
 BOOT_LOGO="desktop"
 
-BOOTBRANCH_BOARD="tag:v2024.07"
-BOOTPATCHDIR="v2024.07"
+# Enable btrfs support in u-boot
+enable_extension "uboot-btrfs"
+
+BOOTBRANCH_BOARD="tag:v2026.01"
+BOOTPATCHDIR="v2026.01"
 BOOTCONFIG="nanopi-r5c-rk3568_defconfig"
 
 OVERLAY_PREFIX="rockchip-rk3568"

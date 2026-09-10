@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# @description Standard GRUB bootloader setup for UEFI-capable boards (amd64, arm64, loong64), with optional amd64 BIOS support and a `DISTRO_GENERIC_KERNEL` mode that boots the distro kernel instead of Armbian's. Installs `grub-efi`, generates `grub.cfg`, and sets `GRUB_GFXPAYLOAD_LINUX=text` with `splash plymouth.ignore-serial-consoles` to keep the framebuffer console on `fbcon` and kernel boot messages visible.
+
 # This runs *after* user_config. Don't change anything not coming from other variables or meant to be configured by the u ser.
 function extension_prepare_config__prepare_grub_standard() {
 	# Extension configuration defaults.
@@ -16,12 +18,12 @@ function extension_prepare_config__prepare_grub_standard() {
 
 	if [[ "${UEFI_GRUB}" != "skip" ]]; then
 		# User config overrides for GRUB.
-		declare -g BOOTCONFIG="none"                       # To try and convince lib/ to not build or install u-boot.
-		unset BOOTSOURCE                                   # To try and convince lib/ to not build or install u-boot.
-		declare -g IMAGE_PARTITION_TABLE="gpt"             # GPT partition table is essential for many UEFI-like implementations, eg Apple+Intel stuff.
-		declare -g UEFISIZE=260                            # in MiB - grub EFI is tiny - but some EFI BIOSes ignore small too small EFI partitions
-		declare -g BOOTSIZE=0                              # No separate /boot when using UEFI.
-		if [[ $BOOTPART_REQUIRED == "yes" ]]; then		   # It is important to place this into /boot to have unified boot partition, especially when CRYPTROOT is used
+		declare -g BOOTCONFIG="none"               # To try and convince lib/ to not build or install u-boot.
+		unset BOOTSOURCE                           # To try and convince lib/ to not build or install u-boot.
+		declare -g IMAGE_PARTITION_TABLE="gpt"     # GPT partition table is essential for many UEFI-like implementations, eg Apple+Intel stuff.
+		declare -g UEFISIZE=260                    # in MiB - grub EFI is tiny - but some EFI BIOSes ignore small too small EFI partitions
+		declare -g BOOTSIZE=0                      # No separate /boot when using UEFI.
+		if [[ $BOOTPART_REQUIRED == "yes" ]]; then # It is important to place this into /boot to have unified boot partition, especially when CRYPTROOT is used
 			declare -g UEFI_MOUNT_POINT=/boot
 		fi
 		declare -g EXTRA_BSP_NAME="${EXTRA_BSP_NAME}-grub" # Unique bsp name.
@@ -153,6 +155,8 @@ pre_umount_final_image__install_grub() {
 		The chroot ($MOUNT) is mounted.
 	GRUB_PRE_INSTALL
 
+	deploy_qemu_binary_to_chroot "$chroot_target" "grub" # undeployed near the end of this function
+
 	if [[ "${UEFI_GRUB_TARGET_BIOS}" != "" ]]; then
 		display_alert "Extension: ${EXTENSION}: Installing GRUB BIOS..." "${UEFI_GRUB_TARGET_BIOS} device ${LOOP}" ""
 		chroot_custom "$chroot_target" grub-install --target=${UEFI_GRUB_TARGET_BIOS} "${LOOP}" || {
@@ -236,6 +240,7 @@ pre_umount_final_image__install_grub() {
 	# Remove host-side config.
 	rm -f "${MOUNT}"/etc/default/grub.d/99-armbian-host-side.cfg
 
+	undeploy_qemu_binary_from_chroot "$chroot_target" "grub"
 	umount_chroot "$chroot_target/"
 
 }
@@ -262,9 +267,32 @@ configure_grub() {
 	[[ -n "$SERIALCON" ]] &&
 		GRUB_CMDLINE_LINUX_DEFAULT+=" console=${SERIALCON}"
 
-	[[ "$BOOT_LOGO" == "yes" || "$BOOT_LOGO" == "desktop" && "$BUILD_DESKTOP" == "yes" ]] &&
-		GRUB_CMDLINE_LINUX_DEFAULT+=" quiet splash plymouth.ignore-serial-consoles i915.force_probe=* loglevel=3" ||
-		GRUB_CMDLINE_LINUX_DEFAULT+=" splash=verbose i915.force_probe=*"
+	# Kernel cmdline. We always pass the graphical-Plymouth flags
+	# (splash plymouth.ignore-serial-consoles) on UEFI systems,
+	# regardless of whether this image is being built as CLI or
+	# desktop. Two reasons:
+	#   1. Users routinely add a desktop later via armbian-config
+	#      and we don't want that to require regenerating grub.cfg.
+	#      The .cfg is baked once at image-build time and stays
+	#      put across desktop installs.
+	#   2. Plymouth handles the "no theme installed" / "no DRM"
+	#      cases gracefully — the flags are harmless on a CLI
+	#      install. They are NOT harmless when wrong: the previous
+	#      'splash=verbose' value was rejected by the kernel
+	#      ("Unknown kernel command line parameters splash=verbose"
+	#      in dmesg) AND interpreted by Plymouth as "render the
+	#      verbose/text theme", so a desktop installed later still
+	#      booted to a black/text screen.
+	#
+	# Deliberately NO 'quiet' and NO 'loglevel=3' here. Plymouth
+	# still draws the splash on top of the kernel boot messages,
+	# but the messages remain visible underneath so users can see
+	# what their system is doing. Press Esc during boot to drop
+	# the splash and read the messages directly.
+	GRUB_CMDLINE_LINUX_DEFAULT+=" splash plymouth.ignore-serial-consoles"
+	if [[ "${ARCH}" == "amd64" ]]; then
+		GRUB_CMDLINE_LINUX_DEFAULT+=" i915.force_probe=*"
+	fi
 
 	# Enable Armbian Wallpaper on GRUB
 	if [[ "${VENDOR}" == Armbian ]]; then
@@ -284,12 +312,13 @@ configure_grub() {
 		GRUB_TIMEOUT_STYLE=menu                                  # Show the menu with Kernel options (Armbian or -generic)...
 		GRUB_TIMEOUT=${UEFI_GRUB_TIMEOUT}                        # ... for ${UEFI_GRUB_TIMEOUT} seconds, then boot the Armbian default.
 		GRUB_DISTRIBUTOR="${UEFI_GRUB_DISTRO_NAME}"              # On GRUB menu will show up as "Armbian GNU/Linux" (will show up in some UEFI BIOS boot menu (F8?) as "armbian", not on others)
+		GRUB_BACKGROUND="/usr/share/images/grub/wallpaper.png"   # Armbian GRUB wallpaper. 05_debian_theme gives GRUB_BACKGROUND precedence over the WALLPAPER sourced from /usr/share/desktop-base/grub_background.sh, so the Armbian image wins even on Debian desktop images where desktop-base ships (and overwrites) that file to point at its own theme wallpaper (Trixie: ceratopsian). Ubuntu already showed the Armbian image; this makes it deterministic on both.
 		GRUB_DISABLE_SUBMENU=y                                   # Do not put all kernel options into a submenu, instead, list them all on the main menu.
 		GRUB_DISABLE_OS_PROBER=false                             # Have to be explicit about enabling os-prober
 		GRUB_FONT="/usr/share/grub/unicode.pf2"                  # Be explicit about the font to use so Ubuntu does not freak out and mess gfxterm
-		GRUB_GFXPAYLOAD=keep
-		GRUB_DISABLE_UUID=false  								 # Be explicit about wanting UUID
-		GRUB_DISABLE_LINUX_UUID=false  							 # Be explicit about wanting UUID
+		GRUB_GFXPAYLOAD_LINUX=text                               # Note the correct var name is GRUB_GFXPAYLOAD_LINUX, not GRUB_GFXPAYLOAD (the latter is silently ignored). The 'text' value disables Ubuntu's vt.handoff=7 injection: Ubuntu's grub2 10_linux only expands 'vt.handoff=7' inside grub.cfg's gfxmode function when the gfxpayload arg is exactly 'keep'. Setting it to 'text' makes the runtime check fail and the framebuffer console stays bound to fbcon for the entire userspace lifetime — which is what we want, otherwise after Plymouth quits on a CLI install (or after the user uninstalls the desktop), the kernel hands the framebuffer to VT7 waiting for an X server, nothing ever claims it, and the local console goes black even though getty@tty1 is running.
+		GRUB_DISABLE_UUID=false                 # Be explicit about wanting UUID
+		GRUB_DISABLE_LINUX_UUID=false          # Be explicit about wanting UUID
 	grubCfgFrag
 
 	if [[ "a${UEFI_GRUB_DISABLE_OS_PROBER}" != "a" ]]; then

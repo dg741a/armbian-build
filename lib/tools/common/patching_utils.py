@@ -7,6 +7,8 @@
 # This file is a part of the Armbian Build Framework
 # https://github.com/armbian/build/
 #
+import email.errors
+import email.header
 import email.utils
 import logging
 import mailbox
@@ -18,6 +20,7 @@ import tempfile
 import git  # GitPython
 from unidecode import unidecode
 from unidiff import PatchSet
+from rich.text import Text
 
 from common.patching_config import PatchingConfig
 from common.term_colors import background_dark_or_light
@@ -223,7 +226,8 @@ class PatchFileInDir:
 					f" the magic date in the patch contents, shouldn't happen. Check the mbox formatting.")
 
 			patches.append(PatchInPatchFile(
-				self, counter, patch_contents, desc, msg['From'], msg['Subject'], msg['Date']))
+				self, counter, patch_contents, desc,
+				header_to_str(msg['From']), header_to_str(msg['Subject']), header_to_str(msg['Date'])))
 
 			counter += 1
 
@@ -431,7 +435,8 @@ class PatchInPatchFile:
 		# log.debug(f"Rejects file is going to be '{rejects_file}'...")
 
 		proc = subprocess.run(
-			["patch", "--batch", "-p1", "-N", f"--reject-file={rejects_file}", "--quoting-style=c"],
+			# Unified rejects regardless of the input patch format: rich_rejects() styles lines by their +/-/@@ prefix.
+			["patch", "--batch", "-p1", "-N", "--reject-format=unified", f"--reject-file={rejects_file}", "--quoting-style=c"],
 			cwd=working_dir,
 			input=real_input,
 			stdout=subprocess.PIPE,
@@ -738,6 +743,18 @@ class PatchInPatchFile:
 				ret = ret.replace(tag, f"[{bold} {color}]{tag}[/{bold} {color}]")
 		return ret
 
+	def rich_rejects(self) -> Text:
+		"""Reject hunks as foldable Text, coloured per line like a diff pager."""
+		line_styles = {"+": "green", "-": "red", "@": "cyan"}
+		text = Text()
+		for line in self.rejects.splitlines(keepends=True):
+			text.append(line, style=line_styles.get(line[:1], ""))
+		# Expand on the Text, not the str: rich counts terminal cells, so wide
+		# characters before a tab keep the columns aligned. 4 instead of rich's
+		# default 8 keeps diff indentation readable in a narrow cell.
+		text.expand_tabs(4)
+		return text
+
 	def apply_patch_date_to_files(self, working_dir, options):
 		# The date applied to the patched files is:
 		# 1) The date of the root Makefile
@@ -760,10 +777,13 @@ class PatchInPatchFile:
 			files_to_touch = [f for f in files_to_touch if f not in self.deleted_file_names]
 
 		for file_name in files_to_touch:
-			# log.debug(f"Setting mtime of '{file_name}' to '{final_mtime}'.")
 			file_path = os.path.join(working_dir, file_name)
 			try:
-				os.utime(file_path, (final_mtime, final_mtime))
+				# Only bump mtime; never lower it. Multiple patches may touch the same file,
+				# and a later patch with an older timestamp must not override the timestamp
+				# set by an earlier patch with a newer one (#9028).
+				if final_mtime > os.path.getmtime(file_path):
+					os.utime(file_path, (final_mtime, final_mtime))
 			except FileNotFoundError:
 				log.warning(f"File '{file_path}' not found in patch {self}, can't set mtime.")
 
@@ -847,6 +867,36 @@ def export_commit_as_patch(repo: git.Repo, commit: str):
 		raise Exception(f"Failed to rewrite indexes in patch output: {stdout_output}")
 
 	return rewritten_indexes
+
+
+def header_to_str(value) -> "str | None":
+	# mailbox.mbox parses with the legacy compat32 policy, so a mail header that
+	# carries raw (non-RFC2047) UTF-8 - e.g. `From: Michał Dziękoński <...>` - comes
+	# back as an email.header.Header tagged 'unknown-8bit' instead of a str, and the
+	# downstream re.match() blows up with "expected string or bytes-like object, got
+	# 'Header'". Decode such headers as UTF-8 (like git mailinfo does) so patches with
+	# non-ASCII authors parse instead of aborting the whole kernel build.
+	if value is None or isinstance(value, str):
+		return value
+	try:
+		decoded_parts = email.header.decode_header(value)
+	except email.errors.HeaderParseError:
+		# A malformed encoded-word (e.g. bad base64) makes decode_header() itself raise,
+		# before the per-part loop can run. Fall back to the raw string form rather than
+		# aborting the whole build; downstream parsing already tolerates mangled text.
+		return str(value)
+	parts = []
+	for data, enc in decoded_parts:
+		if isinstance(data, bytes):
+			if enc is None or enc.lower() in ("unknown-8bit", "x-unknown", "unknown"):
+				enc = "utf-8"
+			try:
+				parts.append(data.decode(enc, "replace"))
+			except LookupError:
+				parts.append(data.decode("utf-8", "replace"))
+		else:
+			parts.append(data)
+	return "".join(parts)
 
 
 # Hack

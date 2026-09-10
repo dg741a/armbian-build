@@ -3630,8 +3630,8 @@ index 111111111111..222222222222 100644
  	case V4L2_CTRL_TYPE_HEVC_SCALING_MATRIX:
  		pr_cont("HEVC_SCALING_MATRIX");
  		break;
-@@ -1173,6 +1179,12 @@ static int std_validate_compound(const struct v4l2_ctrl *ctrl, u32 idx,
- 	case V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS:
+@@ -1186,6 +1192,12 @@ static int std_validate_compound(const struct v4l2_ctrl *ctrl, u32 idx,
+ 			return -EINVAL;
  		break;
  
 +	case V4L2_CTRL_TYPE_HEVC_EXT_SPS_ST_RPS:
@@ -3643,7 +3643,7 @@ index 111111111111..222222222222 100644
  	case V4L2_CTRL_TYPE_HDR10_CLL_INFO:
  		break;
  
-@@ -1925,6 +1937,12 @@ static struct v4l2_ctrl *v4l2_ctrl_new(struct v4l2_ctrl_handler *hdl,
+@@ -1938,6 +1950,12 @@ static struct v4l2_ctrl *v4l2_ctrl_new(struct v4l2_ctrl_handler *hdl,
  	case V4L2_CTRL_TYPE_HEVC_SLICE_PARAMS:
  		elem_size = sizeof(struct v4l2_ctrl_hevc_slice_params);
  		break;
@@ -3949,7 +3949,7 @@ index 111111111111..222222222222 100644
  		vop: vop@27d00000 {
  			compatible = "rockchip,rk3576-vop";
  			reg = <0x0 0x27d00000 0x0 0x3000>, <0x0 0x27d05000 0x0 0x1000>;
-@@ -2680,6 +2715,7 @@ sram: sram@3ff88000 {
+@@ -2681,6 +2716,7 @@ sram: sram@3ff88000 {
  			/* start address and size should be 4k align */
  			rkvdec_sram: rkvdec-sram@0 {
  				reg = <0x0 0x78000>;
@@ -3977,7 +3977,7 @@ diff --git a/drivers/gpu/drm/bridge/synopsys/dw-hdmi-qp.c b/drivers/gpu/drm/brid
 index 111111111111..222222222222 100644
 --- a/drivers/gpu/drm/bridge/synopsys/dw-hdmi-qp.c
 +++ b/drivers/gpu/drm/bridge/synopsys/dw-hdmi-qp.c
-@@ -277,8 +277,7 @@ static unsigned int dw_hdmi_qp_find_n(struct dw_hdmi_qp *hdmi, unsigned long pix
+@@ -278,8 +278,7 @@ static unsigned int dw_hdmi_qp_find_n(struct dw_hdmi_qp *hdmi, unsigned long pix
  	if (n > 0)
  		return n;
  
